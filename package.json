@@ -1,0 +1,28 @@
+{
+	"name": "traffic-light-slack",
+	"version": "1.0.0",
+	"displayName": "Traffic light bot for Slack",
+	"description": "",
+	"type": "commonjs",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "concurrently \"ngrok http --domain=oddly-actual-hippo.ngrok-free.app 3000\" \"nodemon index.js\"",
+		"start": "node index.js"
+	},
+	"keywords": [
+		"slack",
+		"bot"
+	],
+	"author": "Dmitrii Bludov",
+	"license": "ISC",
+	"dependencies": {
+		"@slack/bolt": "^3.18.0",
+		"dotenv": "^16.4.5",
+		"sqlite3": "^5.1.7"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.8.3",
+		"nodemon": "^3.1.2"
+	}
+}
