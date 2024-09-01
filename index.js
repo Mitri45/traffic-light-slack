@@ -51,6 +51,7 @@ app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 	await ack();
 
 	const { channel_id, trigger_id, text } = body;
+
 	channelId = channel_id;
 	try {
 		if(text) {
@@ -59,7 +60,7 @@ app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 		await fetchUsersInChannel(channel_id, client);
 		const result = await client.views.open({
 			// Pass a valid trigger_id within 3 seconds of receiving it
-			trigger_id: trigger_id,
+			trigger_id,
 			// View payload
 			view: modal([...participants.keys()], question),
 		});
@@ -76,7 +77,15 @@ app.view("tl-start-session-modal", async ({ ack, payload, client, logger }) => {
 		if(!state) return;
 		const {
 			tl_question_input_block: { tl_question_input },
+			tl_input_participants: { tl_input_participants_action }
 		} = state.values;
+		const { selected_users } = tl_input_participants_action;
+		// Filter out selected_users from participants
+		for(const [userId, _] of participants.entries()) {
+			if(!selected_users.includes(userId)) {
+				participants.delete(userId);
+			}
+		}
 		question = tl_question_input?.value;
 		const { ts } = await client.chat.postMessage({
 			text: "Something went wrong with the Modal if you see this text",

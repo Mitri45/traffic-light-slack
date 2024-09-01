@@ -43,7 +43,7 @@ const modal = (users, tlQuestion = "") => {
 						text: "Select participants",
 						emoji: true,
 					},
-					action_id: "pa_input_participants_action",
+					action_id: "tl_input_participants_action",
 					initial_users: users,
 				},
 				label: {
@@ -51,7 +51,7 @@ const modal = (users, tlQuestion = "") => {
 					text: "Select Participants",
 					emoji: true,
 				},
-				block_id: "pa_input_participants",
+				block_id: "tl_input_participants",
 			},
 		],
 		callback_id: "tl-start-session-modal",
