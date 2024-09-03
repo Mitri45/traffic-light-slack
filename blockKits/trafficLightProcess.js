@@ -6,40 +6,26 @@ const fillContext = (image_url, name) => {
 	};
 };
 
-const trafficLightProcess = (question, participants) => {
+const trafficLightProcess = (question, participants, revealFlag = false) => {
 	const voted = [];
 	const notVoted = [];
 	const result = new Map();
 
-	for(const [_, { name, image, vote, id }] of participants.entries()) {
+	for(const [_, { name, image, vote }] of participants.entries()) {
 		if(vote) {
 			if(result.has(vote)) {
 				const resultToUpdate = result.get(vote);
-				resultToUpdate.elements.push({
-					type: "text",
-					text: " | ",
-				});
 				resultToUpdate.elements.push(fillContext(image, name));
 				result.set(vote, resultToUpdate)
 			} else {
 				result.set(vote, {
-					type: "rich_text_section",
+					type: "context",
 					elements: [
 						{
-							type: "emoji",
-							name: vote
+							type: "mrkdwn",
+							text: `:${vote}: `
 						},
-						{
-							type: "text",
-							text: "    ",
-						},
-						{
-							type: "user",
-							user_id: id,
-							style: {
-								bold: true,
-							},
-						}
+						fillContext(image, name),
 					],
 				});
 			}
@@ -66,29 +52,15 @@ const trafficLightProcess = (question, participants) => {
 			elements: notVoted,
 		};
 	} else {
-		if(notVoted.length === 0) {
-			console.log('RESULT', JSON.stringify([...result.values()]));
-			for(const [index, value] of [...result.entries()]) {
-				votedSection.push({
-					type: "rich_text",
-					elements: [value],
-				});
-				if(index % 2 === 0) {
-					votedSection.push({
-						type: "divider",
-					});
-				}
-			}
-		} else {
-			votedSection = [{
-				type: "context",
-				elements: voted,
-			}];
-			whoIsVotingSection = {
-				type: "context",
-				elements: notVoted,
-			};
-		}
+		votedSection = [{
+			type: "context",
+			elements: voted,
+		}];
+		whoIsVotingSection = {
+			type: "context",
+			elements: notVoted,
+		};
+
 	}
 
 	const votingInProcessMessage = [
@@ -114,7 +86,7 @@ const trafficLightProcess = (question, participants) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: "On the track  :white_check_mark:",
+						text: "On track  :white_check_mark:",
 						emoji: true,
 					},
 					value: "white_check_mark",
@@ -186,12 +158,11 @@ const trafficLightProcess = (question, participants) => {
 				},
 			],
 		},
-
 		...votedSection,
-
-
 	];
-	const votingFinished = [
+
+
+	const votingFinishedMessage = [
 		{
 			type: "section",
 			text: {
@@ -214,10 +185,9 @@ const trafficLightProcess = (question, participants) => {
 				text: "\n",
 			},
 		},
-		...votedSection,
-
+		...result.values()
 	];
-	return notVoted.length === 0 ? votingFinished : votingInProcessMessage;
+	return (notVoted.length === 0 || revealFlag) ? votingFinishedMessage : votingInProcessMessage;
 };
 
 module.exports = { trafficLightProcess };

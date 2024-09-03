@@ -12,7 +12,8 @@ const app = new App({
 let question = process.env.DEFAULT_QUESTION;
 let channelId = "";
 let participants = new Map();
-
+voteCount = 0;
+let messageTs = "";
 
 const fetchUsersInChannel = async (channelId, client) => {
 	// Clear participants
@@ -49,7 +50,7 @@ const fetchUsersInChannel = async (channelId, client) => {
 
 app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 	await ack();
-
+	voteCount = 0;
 	const { channel_id, trigger_id, text } = body;
 
 	channelId = channel_id;
@@ -100,7 +101,7 @@ app.view("tl-start-session-modal", async ({ ack, payload, client, logger }) => {
 
 app.action(
 	{ block_id: "tl-vote-block" },
-	async ({ ack, payload, context, respond }) => {
+	async ({ ack, payload, context, respond, client }) => {
 		await ack();
 		// update participants
 		const { value } = payload;
@@ -112,11 +113,27 @@ app.action(
 			...participants.get(userId),
 			vote: value,
 		});
-
+		voteCount++;
 		await respond({
 			replace_original: true,
 			blocks: trafficLightProcess(question, participants),
 		});
+		// Start the timer if it's the first vote
+		if(voteCount === 1) {
+			setTimeout(async () => {
+				const blocks = trafficLightProcess(question, participants, true)
+				try {
+					await client.chat.update({
+						channel: channelId,
+						ts: messageTs,
+						blocks,
+					});
+
+				} catch(error) {
+					console.error("Error updating message:", error);
+				}
+			}, 10000);
+		}
 	},
 );
 
