@@ -1,4 +1,4 @@
-const modal = (users, tlQuestion = "") => {
+const modal = (tlQuestion = "") => {
 	return {
 		type: "modal",
 		title: {
@@ -37,21 +37,54 @@ const modal = (users, tlQuestion = "") => {
 			{
 				type: "input",
 				element: {
-					type: "multi_users_select",
+					type: "static_select",
 					placeholder: {
 						type: "plain_text",
-						text: "Select participants",
+						text: "Select voting duration",
 						emoji: true,
 					},
-					action_id: "tl_input_participants_action",
-					initial_users: users,
+					options: [
+						{
+							text: {
+								type: "plain_text",
+								text: "10 seconds",
+								emoji: true,
+							},
+							value: "10"
+						},
+						{
+							text: {
+								type: "plain_text",
+								text: "20 seconds",
+								emoji: true,
+							},
+							value: "20"
+						},
+						{
+							text: {
+								type: "plain_text",
+								text: "30 seconds",
+								emoji: true,
+							},
+							value: "30"
+						}
+					],
+					initial_option: {
+						text: {
+							type: "plain_text",
+							text: "10 seconds",
+							emoji: true,
+						},
+						value: "10"
+					},
+					action_id: "tl_voting_duration_action"
 				},
 				label: {
 					type: "plain_text",
-					text: "Select Participants",
+					text: "Select voting duration",
 					emoji: true,
 				},
-				block_id: "tl_input_participants",
+				block_id: "tl_voting_duration",
 			},
 		],
 		callback_id: "tl-start-session-modal",

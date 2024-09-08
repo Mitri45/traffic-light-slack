@@ -11,46 +11,14 @@ const app = new App({
 
 let question = process.env.DEFAULT_QUESTION;
 let channelId = "";
-let participants = new Map();
-voteCount = 0;
+// let participants = new Map();
+let hasVotingStarted = false;
 let messageTs = "";
-
-const fetchUsersInChannel = async (channelId, client) => {
-	// Clear participants
-	participants = new Map();
-	try {
-		const { members } = await client.conversations.members({
-			channel: channelId,
-		});
-		// Filter from bots
-		if(members.length === 0) return [];
-		for(const member of members) {
-			const userInfo = await client.users.info({ user: member });
-			// Initially add only users who are in the huddle
-			if(userInfo.user.is_bot) continue;
-			if(userInfo.user.profile.huddle_state === "in_a_huddle") {
-				participants.set(userInfo.user.id, {
-					name: userInfo.user.name,
-					image: userInfo.user.profile.image_48,
-					id: userInfo.user.id,
-				});
-				continue;
-			}
-			// If no huddle is active, add all users
-			participants.set(userInfo.user.id, {
-				name: userInfo.user.name,
-				image: userInfo.user.profile.image_48,
-				id: userInfo.user.id,
-			});
-		}
-	} catch(error) {
-		console.error("Error fetching users:", error);
-	}
-};
+let timeout = 0;
 
 app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 	await ack();
-	voteCount = 0;
+	hasVotingStarted = false;
 	const { channel_id, trigger_id, text } = body;
 
 	channelId = channel_id;
@@ -58,12 +26,11 @@ app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 		if(text) {
 			question = text.trim();
 		}
-		await fetchUsersInChannel(channel_id, client);
 		const result = await client.views.open({
 			// Pass a valid trigger_id within 3 seconds of receiving it
 			trigger_id,
 			// View payload
-			view: modal([...participants.keys()], question),
+			view: modal(question),
 		});
 		logger.info(result);
 	} catch(error) {
@@ -78,20 +45,14 @@ app.view("tl-start-session-modal", async ({ ack, payload, client, logger }) => {
 		if(!state) return;
 		const {
 			tl_question_input_block: { tl_question_input },
-			tl_input_participants: { tl_input_participants_action }
+			tl_voting_duration: { tl_voting_duration_action },
 		} = state.values;
-		const { selected_users } = tl_input_participants_action;
-		// Filter out selected_users from participants
-		for(const [userId, _] of participants.entries()) {
-			if(!selected_users.includes(userId)) {
-				participants.delete(userId);
-			}
-		}
 		question = tl_question_input?.value;
+		timeout = Number.parseInt(tl_voting_duration_action.selected_option.value);
 		const { ts } = await client.chat.postMessage({
 			text: "Something went wrong with the Modal if you see this text",
 			channel: channelId,
-			blocks: trafficLightProcess(question, participants),
+			blocks: trafficLightProcess({ question, revealFlag: false, timeout, startSession: true }),
 		});
 		messageTs = ts;
 	} catch(error) {
@@ -106,33 +67,33 @@ app.action(
 		// update participants
 		const { value } = payload;
 		const { userId } = context;
-
-		if(!participants.has(userId)) return;
-
-		participants.set(userId, {
-			...participants.get(userId),
+		const userInfo = await client.users.info({ user: userId });
+		const participant = {
+			name: userInfo.user.name,
+			image: userInfo.user.profile.image_48,
+			id: userInfo.user.id,
 			vote: value,
-		});
-		voteCount++;
+		}
+
 		await respond({
 			replace_original: true,
-			blocks: trafficLightProcess(question, participants),
+			blocks: trafficLightProcess({ question, revealFlag: false, timeout, participant }),
 		});
 		// Start the timer if it's the first vote
-		if(voteCount === 1) {
+		if(!hasVotingStarted) {
 			setTimeout(async () => {
-				const blocks = trafficLightProcess(question, participants, true)
 				try {
 					await client.chat.update({
+						replace_original: true,
 						channel: channelId,
 						ts: messageTs,
-						blocks,
+						blocks: trafficLightProcess({ question, revealFlag: true }),
 					});
-
 				} catch(error) {
 					console.error("Error updating message:", error);
 				}
-			}, 10000);
+			}, timeout * 1000);
+			hasVotingStarted = true;
 		}
 	},
 );

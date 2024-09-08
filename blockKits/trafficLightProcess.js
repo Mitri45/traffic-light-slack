@@ -5,65 +5,18 @@ const fillContext = (image_url, name) => {
 		alt_text: name,
 	};
 };
+let result = new Map();
+let votedSection = [{
+	type: "context",
+	elements: [],
+}];
+let voted = [];
 
-const trafficLightProcess = (question, participants, revealFlag = false) => {
-	const voted = [];
-	const notVoted = [];
-	const result = new Map();
+const trafficLightProcess = (options) => {
 
-	for(const [_, { name, image, vote }] of participants.entries()) {
-		if(vote) {
-			if(result.has(vote)) {
-				const resultToUpdate = result.get(vote);
-				resultToUpdate.elements.push(fillContext(image, name));
-				result.set(vote, resultToUpdate)
-			} else {
-				result.set(vote, {
-					type: "context",
-					elements: [
-						{
-							type: "mrkdwn",
-							text: `:${vote}: `
-						},
-						fillContext(image, name),
-					],
-				});
-			}
-			voted.push(fillContext(image, name));
-		} else {
-			notVoted.push(fillContext(image, name));
-		}
-	}
-	let votedSection = [];
-	let whoIsVotingSection;
+	const { question, revealFlag, timeout, startSession, participant } = options;
 
-	if(voted.length === 0) {
-		votedSection = [{
-			type: "context",
-			elements: [
-				{
-					type: "mrkdwn",
-					text: ":ghost:",
-				},
-			],
-		}];
-		whoIsVotingSection = {
-			type: "context",
-			elements: notVoted,
-		};
-	} else {
-		votedSection = [{
-			type: "context",
-			elements: voted,
-		}];
-		whoIsVotingSection = {
-			type: "context",
-			elements: notVoted,
-		};
-
-	}
-
-	const votingInProcessMessage = [
+	const votingInProcess = [
 		{
 			type: "section",
 			text: {
@@ -78,6 +31,15 @@ const trafficLightProcess = (question, participants, revealFlag = false) => {
 				text: question,
 				emoji: true,
 			},
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": `:hourglass_flowing_sand: votes will be reveled in ${timeout} seconds`
+				}
+			]
 		},
 		{
 			type: "actions",
@@ -96,7 +58,7 @@ const trafficLightProcess = (question, participants, revealFlag = false) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: "Concerned  :warning:",
+						text: "Uncertain  :warning:",
 						emoji: true,
 					},
 					value: "warning",
@@ -106,10 +68,10 @@ const trafficLightProcess = (question, participants, revealFlag = false) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: "No good  :no_entry:",
+						text: "At Risk  :fire:",
 						emoji: true,
 					},
-					value: "no_entry",
+					value: "fire",
 					action_id: "ap_vote_action_3",
 				},
 			],
@@ -126,7 +88,7 @@ const trafficLightProcess = (question, participants, revealFlag = false) => {
 					elements: [
 						{
 							type: "text",
-							text: " Waiting response from: ",
+							text: "Who's voted already:",
 							style: {
 								bold: true,
 							},
@@ -134,35 +96,84 @@ const trafficLightProcess = (question, participants, revealFlag = false) => {
 					],
 				},
 			],
-		},
+		}
+	];
+
+	if(startSession) {
+		return [...votingInProcess,
 		{
-			...whoIsVotingSection,
-		},
-		{
-			type: "divider",
-		},
-		{
-			type: "rich_text",
-			elements: [
-				{
-					type: "rich_text_section",
-					elements: [
-						{
-							type: "text",
-							text: " Already responded:",
-							style: {
-								bold: true,
-							},
-						},
-					],
-				},
-			],
-		},
+			type: "context",
+			elements: [{
+				type: "mrkdwn",
+				text: ":ghost:",
+			},]
+		}]
+	}
+
+	if(participant?.vote) {
+		const { name, image, vote, id } = participant;
+		if(voted.includes(id)) {
+			// User has already voted, update their vote
+			for(const [key, value] of result.entries()) {
+				const index = value.elements.findIndex(el => el.alt_text === name);
+				if(index !== -1) {
+					// Remove user from previous vote
+					value.elements.splice(index, 1);
+					if(value.elements.length === 1) {
+						// Only the emoji is left, remove this entry
+						result.delete(key);
+					}
+					break;
+				}
+			}
+		}
+
+		// Add or update user's vote
+		if(result.has(vote)) {
+			const resultToUpdate = result.get(vote);
+			resultToUpdate.elements.push(fillContext(image, name));
+			result.set(vote, resultToUpdate);
+		} else {
+			result.set(vote, {
+				type: "context",
+				elements: [
+					{
+						type: "mrkdwn",
+						text: `:${vote}: `
+					},
+					fillContext(image, name),
+				],
+			});
+		}
+
+		if(!voted.includes(id)) {
+			voted.push(id);
+			votedSection[0].elements.push(fillContext(image, name));
+		}
+	} else if(!revealFlag) {
+		result = new Map();
+		voted = [];
+		votedSection = [{
+			type: "context",
+			elements: [],
+		}];
+	}
+
+
+
+	const votingInProcessMessage = [
+		...votingInProcess,
 		...votedSection,
 	];
 
-
 	const votingFinishedMessage = [
+		{
+			type: "section",
+			text: {
+				type: "mrkdwn",
+				text: "\n",
+			},
+		},
 		{
 			type: "section",
 			text: {
@@ -187,7 +198,7 @@ const trafficLightProcess = (question, participants, revealFlag = false) => {
 		},
 		...result.values()
 	];
-	return (notVoted.length === 0 || revealFlag) ? votingFinishedMessage : votingInProcessMessage;
+	return revealFlag ? votingFinishedMessage : votingInProcessMessage;
 };
 
 module.exports = { trafficLightProcess };
