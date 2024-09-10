@@ -6,14 +6,15 @@ const fillContext = (image_url, name) => {
 	};
 };
 let result = new Map();
-let votedSection = [{
-	type: "context",
-	elements: [],
-}];
+let votedSection = [
+	{
+		type: "context",
+		elements: [],
+	},
+];
 let voted = [];
 
 const trafficLightProcess = (options) => {
-
 	const { question, revealFlag, timeout, startSession, participant } = options;
 
 	const votingInProcess = [
@@ -33,13 +34,13 @@ const trafficLightProcess = (options) => {
 			},
 		},
 		{
-			"type": "context",
-			"elements": [
+			type: "context",
+			elements: [
 				{
-					"type": "mrkdwn",
-					"text": `:hourglass_flowing_sand: votes will be reveled in ${timeout} seconds`
-				}
-			]
+					type: "mrkdwn",
+					text: `:hourglass_flowing_sand: votes will be reveled in ${timeout} seconds`,
+				},
+			],
 		},
 		{
 			type: "actions",
@@ -96,30 +97,42 @@ const trafficLightProcess = (options) => {
 					],
 				},
 			],
-		}
+		},
 	];
 
-	if(startSession) {
-		return [...votingInProcess,
-		{
-			type: "context",
-			elements: [{
-				type: "mrkdwn",
-				text: ":ghost:",
-			},]
-		}]
+	if (startSession) {
+		result = new Map();
+		voted = [];
+		votedSection = [
+			{
+				type: "context",
+				elements: [],
+			},
+		];
+		return [
+			...votingInProcess,
+			{
+				type: "context",
+				elements: [
+					{
+						type: "mrkdwn",
+						text: ":ghost:",
+					},
+				],
+			},
+		];
 	}
 
-	if(participant?.vote) {
+	if (participant?.vote) {
 		const { name, image, vote, id } = participant;
-		if(voted.includes(id)) {
+		if (voted.includes(id)) {
 			// User has already voted, update their vote
-			for(const [key, value] of result.entries()) {
-				const index = value.elements.findIndex(el => el.alt_text === name);
-				if(index !== -1) {
+			for (const [key, value] of result.entries()) {
+				const index = value.elements.findIndex((el) => el.alt_text === name);
+				if (index !== -1) {
 					// Remove user from previous vote
 					value.elements.splice(index, 1);
-					if(value.elements.length === 1) {
+					if (value.elements.length === 1) {
 						// Only the emoji is left, remove this entry
 						result.delete(key);
 					}
@@ -129,7 +142,7 @@ const trafficLightProcess = (options) => {
 		}
 
 		// Add or update user's vote
-		if(result.has(vote)) {
+		if (result.has(vote)) {
 			const resultToUpdate = result.get(vote);
 			resultToUpdate.elements.push(fillContext(image, name));
 			result.set(vote, resultToUpdate);
@@ -139,66 +152,56 @@ const trafficLightProcess = (options) => {
 				elements: [
 					{
 						type: "mrkdwn",
-						text: `:${vote}: `
+						text: `:${vote}: `,
 					},
 					fillContext(image, name),
 				],
 			});
 		}
 
-		if(!voted.includes(id)) {
+		if (!voted.includes(id)) {
 			voted.push(id);
 			votedSection[0].elements.push(fillContext(image, name));
 		}
-	} else if(!revealFlag) {
-		result = new Map();
-		voted = [];
-		votedSection = [{
-			type: "context",
-			elements: [],
-		}];
 	}
 
+	const votingInProcessMessage = [...votingInProcess, ...votedSection];
 
-
-	const votingInProcessMessage = [
-		...votingInProcess,
-		...votedSection,
-	];
-
-	const votingFinishedMessage = [
-		{
-			type: "section",
-			text: {
-				type: "mrkdwn",
-				text: "\n",
+	if (revealFlag) {
+		return [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: "\n",
+				},
 			},
-		},
-		{
-			type: "section",
-			text: {
-				type: "mrkdwn",
-				text: "\n",
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: "\n",
+				},
 			},
-		},
-		{
-			type: "header",
-			text: {
-				type: "plain_text",
-				text: "Team's vibe: ",
-				emoji: true,
+			{
+				type: "header",
+				text: {
+					type: "plain_text",
+					text: "Team's vibe: ",
+					emoji: true,
+				},
 			},
-		},
-		{
-			type: "section",
-			text: {
-				type: "mrkdwn",
-				text: "\n",
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: "\n",
+				},
 			},
-		},
-		...result.values()
-	];
-	return revealFlag ? votingFinishedMessage : votingInProcessMessage;
+			...result.values(),
+		];
+	}
+	return votingInProcessMessage;
 };
 
 module.exports = { trafficLightProcess };

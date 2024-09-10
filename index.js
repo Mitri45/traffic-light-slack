@@ -11,7 +11,6 @@ const app = new App({
 
 let question = process.env.DEFAULT_QUESTION;
 let channelId = "";
-// let participants = new Map();
 let hasVotingStarted = false;
 let messageTs = "";
 let timeout = 0;
@@ -23,7 +22,7 @@ app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 
 	channelId = channel_id;
 	try {
-		if(text) {
+		if (text) {
 			question = text.trim();
 		}
 		const result = await client.views.open({
@@ -33,7 +32,7 @@ app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 			view: modal(question),
 		});
 		logger.info(result);
-	} catch(error) {
+	} catch (error) {
 		logger.error(error);
 	}
 });
@@ -42,7 +41,7 @@ app.view("tl-start-session-modal", async ({ ack, payload, client, logger }) => {
 	await ack();
 	try {
 		const { state } = payload;
-		if(!state) return;
+		if (!state) return;
 		const {
 			tl_question_input_block: { tl_question_input },
 			tl_voting_duration: { tl_voting_duration_action },
@@ -52,10 +51,15 @@ app.view("tl-start-session-modal", async ({ ack, payload, client, logger }) => {
 		const { ts } = await client.chat.postMessage({
 			text: "Something went wrong with the Modal if you see this text",
 			channel: channelId,
-			blocks: trafficLightProcess({ question, revealFlag: false, timeout, startSession: true }),
+			blocks: trafficLightProcess({
+				question,
+				revealFlag: false,
+				timeout,
+				startSession: true,
+			}),
 		});
 		messageTs = ts;
-	} catch(error) {
+	} catch (error) {
 		logger.error(error);
 	}
 });
@@ -73,14 +77,19 @@ app.action(
 			image: userInfo.user.profile.image_48,
 			id: userInfo.user.id,
 			vote: value,
-		}
+		};
 
 		await respond({
 			replace_original: true,
-			blocks: trafficLightProcess({ question, revealFlag: false, timeout, participant }),
+			blocks: trafficLightProcess({
+				question,
+				revealFlag: false,
+				timeout,
+				participant,
+			}),
 		});
 		// Start the timer if it's the first vote
-		if(!hasVotingStarted) {
+		if (!hasVotingStarted) {
 			setTimeout(async () => {
 				try {
 					await client.chat.update({
@@ -89,7 +98,7 @@ app.action(
 						ts: messageTs,
 						blocks: trafficLightProcess({ question, revealFlag: true }),
 					});
-				} catch(error) {
+				} catch (error) {
 					console.error("Error updating message:", error);
 				}
 			}, timeout * 1000);
