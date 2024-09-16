@@ -22,7 +22,7 @@ app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 
 	channelId = channel_id;
 	try {
-		if (text) {
+		if(text) {
 			question = text.trim();
 		}
 		const result = await client.views.open({
@@ -32,7 +32,7 @@ app.command(process.env.BOT_COMMAND, async ({ ack, body, client, logger }) => {
 			view: modal(question),
 		});
 		logger.info(result);
-	} catch (error) {
+	} catch(error) {
 		logger.error(error);
 	}
 });
@@ -41,7 +41,7 @@ app.view("tl-start-session-modal", async ({ ack, payload, client, logger }) => {
 	await ack();
 	try {
 		const { state } = payload;
-		if (!state) return;
+		if(!state) return;
 		const {
 			tl_question_input_block: { tl_question_input },
 			tl_voting_duration: { tl_voting_duration_action },
@@ -59,7 +59,7 @@ app.view("tl-start-session-modal", async ({ ack, payload, client, logger }) => {
 			}),
 		});
 		messageTs = ts;
-	} catch (error) {
+	} catch(error) {
 		logger.error(error);
 	}
 });
@@ -89,7 +89,7 @@ app.action(
 			}),
 		});
 		// Start the timer if it's the first vote
-		if (!hasVotingStarted) {
+		if(!hasVotingStarted) {
 			setTimeout(async () => {
 				try {
 					await client.chat.update({
@@ -98,7 +98,7 @@ app.action(
 						ts: messageTs,
 						blocks: trafficLightProcess({ question, revealFlag: true }),
 					});
-				} catch (error) {
+				} catch(error) {
 					console.error("Error updating message:", error);
 				}
 			}, timeout * 1000);
@@ -106,6 +106,20 @@ app.action(
 		}
 	},
 );
+
+app.action({ block_id: "tl-show_results" }, async ({ ack, client }) => {
+	await ack();
+	try {
+		await client.chat.update({
+			replace_original: true,
+			channel: channelId,
+			ts: messageTs,
+			blocks: trafficLightProcess({ question, revealFlag: true }),
+		});
+	} catch(error) {
+		console.error("Error updating message:", error);
+	}
+});
 
 (async () => {
 	// Start your app
