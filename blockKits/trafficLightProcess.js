@@ -15,7 +15,19 @@ let votedSection = [
 let voted = [];
 
 const trafficLightProcess = (options) => {
-	const { question, revealFlag, timeout, startSession, participant } = options;
+	const {
+		question,
+		timeout,
+		revealFlag,
+		startSession,
+		participant,
+		first_button_text,
+		second_button_text,
+		third_button_text,
+		first_button_emoji,
+		second_button_emoji,
+		third_button_emoji,
+	} = options;
 
 	const votingInProcess = [
 		{
@@ -49,7 +61,7 @@ const trafficLightProcess = (options) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: "On track  :white_check_mark:",
+						text: `${first_button_text} ${first_button_emoji}`,
 						emoji: true,
 					},
 					value: "white_check_mark",
@@ -59,7 +71,7 @@ const trafficLightProcess = (options) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: "Uncertain  :warning:",
+						text: `${second_button_text} ${second_button_emoji}`,
 						emoji: true,
 					},
 					value: "warning",
@@ -69,7 +81,7 @@ const trafficLightProcess = (options) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: "At Risk  :fire:",
+						text: `${third_button_text} ${third_button_emoji}`,
 						emoji: true,
 					},
 					value: "fire",
@@ -100,7 +112,7 @@ const trafficLightProcess = (options) => {
 		},
 	];
 
-	if(startSession) {
+	if (startSession) {
 		result = new Map();
 		voted = [];
 		votedSection = [
@@ -123,16 +135,16 @@ const trafficLightProcess = (options) => {
 		];
 	}
 
-	if(participant?.vote) {
+	if (participant?.vote) {
 		const { name, image, vote, id } = participant;
-		if(voted.includes(id)) {
+		if (voted.includes(id)) {
 			// User has already voted, update their vote
-			for(const [key, value] of result.entries()) {
+			for (const [key, value] of result.entries()) {
 				const index = value.elements.findIndex((el) => el.alt_text === name);
-				if(index !== -1) {
+				if (index !== -1) {
 					// Remove user from previous vote
 					value.elements.splice(index, 1);
-					if(value.elements.length === 1) {
+					if (value.elements.length === 1) {
 						// Only the emoji is left, remove this entry
 						result.delete(key);
 					}
@@ -142,7 +154,7 @@ const trafficLightProcess = (options) => {
 		}
 
 		// Add or update user's vote
-		if(result.has(vote)) {
+		if (result.has(vote)) {
 			const resultToUpdate = result.get(vote);
 			resultToUpdate.elements.push(fillContext(image, name));
 			result.set(vote, resultToUpdate);
@@ -159,35 +171,40 @@ const trafficLightProcess = (options) => {
 			});
 		}
 
-		if(!voted.includes(id)) {
+		if (!voted.includes(id)) {
 			voted.push(id);
 			votedSection[0].elements.push(fillContext(image, name));
 		}
 	}
 
-	const showResultsButton = [{
-		type: "divider",
-	},
-	{
-		type: "actions",
-		elements: [
-			{
-				type: "button",
-				text: {
-					type: "plain_text",
-					text: "Reveal results now :alarm_clock:",
-					emoji: true,
+	const showResultsButton = [
+		{
+			type: "divider",
+		},
+		{
+			type: "actions",
+			elements: [
+				{
+					type: "button",
+					text: {
+						type: "plain_text",
+						text: "Reveal results now :alarm_clock:",
+						emoji: true,
+					},
+					action_id: "revealResults_action",
 				},
-				action_id: "revealResults_action",
-			},
-		],
-		block_id: "tl-show_results",
-	}]
+			],
+			block_id: "tl-show_results",
+		},
+	];
 
+	const votingInProcessMessage = [
+		...votingInProcess,
+		...votedSection,
+		...showResultsButton,
+	];
 
-	const votingInProcessMessage = [...votingInProcess, ...votedSection, ...showResultsButton];
-
-	if(revealFlag) {
+	if (revealFlag) {
 		return [
 			{
 				type: "section",
@@ -224,4 +241,4 @@ const trafficLightProcess = (options) => {
 	return votingInProcessMessage;
 };
 
-module.exports = { trafficLightProcess };
+module.exports = trafficLightProcess;
