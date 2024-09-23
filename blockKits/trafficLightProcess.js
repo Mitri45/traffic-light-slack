@@ -64,7 +64,7 @@ const trafficLightProcess = (options) => {
 						text: `${first_button_text} ${first_button_emoji}`,
 						emoji: true,
 					},
-					value: "white_check_mark",
+					value: first_button_emoji,
 					action_id: "ap_vote_action_1",
 				},
 				{
@@ -74,7 +74,7 @@ const trafficLightProcess = (options) => {
 						text: `${second_button_text} ${second_button_emoji}`,
 						emoji: true,
 					},
-					value: "warning",
+					value: second_button_emoji,
 					action_id: "ap_vote_action_2",
 				},
 				{
@@ -84,7 +84,7 @@ const trafficLightProcess = (options) => {
 						text: `${third_button_text} ${third_button_emoji}`,
 						emoji: true,
 					},
-					value: "fire",
+					value: third_button_emoji,
 					action_id: "ap_vote_action_3",
 				},
 			],
@@ -164,7 +164,7 @@ const trafficLightProcess = (options) => {
 				elements: [
 					{
 						type: "mrkdwn",
-						text: `:${vote}: `,
+						text: vote,
 					},
 					fillContext(image, name),
 				],
