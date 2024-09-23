@@ -57,9 +57,9 @@ app.command(botCommand, async ({ ack, body, client, logger }) => {
 });
 
 // Listens to events when the app home is opened
-app.event("app_home_opened", async ({ event, client }) => {
+app.event("app_home_opened", async ({ body, client }) => {
 	try {
-		const generatedHomeView = await generateHomeView(event?.view?.team_id);
+		const generatedHomeView = await generateHomeView(body?.team_id);
 
 		await client.views.publish({
 			user_id: event.user,
