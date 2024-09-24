@@ -14,6 +14,27 @@ let votedSection = [
 ];
 let voted = [];
 
+const showResultsButton = [
+	{
+		type: "divider",
+	},
+	{
+		type: "actions",
+		elements: [
+			{
+				type: "button",
+				text: {
+					type: "plain_text",
+					text: "Reveal results now :alarm_clock:",
+					emoji: true,
+				},
+				action_id: "revealResults_action",
+			},
+		],
+		block_id: "tl-show_results",
+	},
+];
+
 const trafficLightProcess = (options) => {
 	const {
 		question,
@@ -61,7 +82,7 @@ const trafficLightProcess = (options) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: `${first_button_text} ${first_button_emoji}`,
+						text: `${first_button_text} :${first_button_emoji}:`,
 						emoji: true,
 					},
 					value: first_button_emoji,
@@ -71,7 +92,7 @@ const trafficLightProcess = (options) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: `${second_button_text} ${second_button_emoji}`,
+						text: `${second_button_text} :${second_button_emoji}:`,
 						emoji: true,
 					},
 					value: second_button_emoji,
@@ -81,7 +102,7 @@ const trafficLightProcess = (options) => {
 					type: "button",
 					text: {
 						type: "plain_text",
-						text: `${third_button_text} ${third_button_emoji}`,
+						text: `${third_button_text} :${third_button_emoji}:`,
 						emoji: true,
 					},
 					value: third_button_emoji,
@@ -139,64 +160,84 @@ const trafficLightProcess = (options) => {
 		const { name, image, vote, id } = participant;
 		if (voted.includes(id)) {
 			// User has already voted, update their vote
-			for (const [key, value] of result.entries()) {
-				const index = value.elements.findIndex((el) => el.alt_text === name);
-				if (index !== -1) {
-					// Remove user from previous vote
-					value.elements.splice(index, 1);
-					if (value.elements.length === 1) {
-						// Only the emoji is left, remove this entry
-						result.delete(key);
+			const resultToUpdate = result.get(vote);
+			if (resultToUpdate) {
+				const index = resultToUpdate.elements.findIndex(
+					(el) => el.alt_text === name,
+				);
+				if (index === -1) {
+					resultToUpdate.elements.push(fillContext(image, name));
+					result.set(vote, resultToUpdate);
+					// Remove user from previous vote results
+					for (const [key, value] of result.entries()) {
+						if (key !== vote) {
+							const index = value.elements.findIndex(
+								(el) => el.alt_text === name,
+							);
+							if (index !== -1) {
+								// Remove user from previous vote
+								value.elements.splice(index, 1);
+								if (value.elements.length === 1) {
+									// Only the emoji is left, remove this entry
+									result.delete(key);
+								}
+								break;
+							}
+						}
 					}
-					break;
+				}
+			} else {
+				// User has already voted but their vote is not in the result map
+				result.set(vote, {
+					type: "context",
+					elements: [
+						{
+							type: "mrkdwn",
+							text: `:${vote}:`,
+						},
+						fillContext(image, name),
+					],
+				});
+				for (const [key, value] of result.entries()) {
+					if (key !== vote) {
+						const index = value.elements.findIndex(
+							(el) => el.alt_text === name,
+						);
+						if (index !== -1) {
+							// Remove user from previous vote
+							value.elements.splice(index, 1);
+							if (value.elements.length === 1) {
+								// Only the emoji is left, remove this entry
+								result.delete(key);
+							}
+							break;
+						}
+					}
 				}
 			}
-		}
-
-		// Add or update user's vote
-		if (result.has(vote)) {
-			const resultToUpdate = result.get(vote);
-			resultToUpdate.elements.push(fillContext(image, name));
-			result.set(vote, resultToUpdate);
 		} else {
-			result.set(vote, {
-				type: "context",
-				elements: [
-					{
-						type: "mrkdwn",
-						text: vote,
-					},
-					fillContext(image, name),
-				],
-			});
-		}
-
-		if (!voted.includes(id)) {
 			voted.push(id);
 			votedSection[0].elements.push(fillContext(image, name));
+
+			// Add or update user's vote
+			if (result.has(vote)) {
+				const resultToUpdate = result.get(vote);
+				resultToUpdate.elements.push(fillContext(image, name));
+				result.set(vote, resultToUpdate);
+			} else {
+				result.set(vote, {
+					type: "context",
+					elements: [
+						{
+							type: "mrkdwn",
+							text: `:${vote}:`,
+						},
+						fillContext(image, name),
+					],
+				});
+			}
 		}
 	}
-
-	const showResultsButton = [
-		{
-			type: "divider",
-		},
-		{
-			type: "actions",
-			elements: [
-				{
-					type: "button",
-					text: {
-						type: "plain_text",
-						text: "Reveal results now :alarm_clock:",
-						emoji: true,
-					},
-					action_id: "revealResults_action",
-				},
-			],
-			block_id: "tl-show_results",
-		},
-	];
 
 	const votingInProcessMessage = [
 		...votingInProcess,

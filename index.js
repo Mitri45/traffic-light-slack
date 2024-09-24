@@ -8,11 +8,11 @@ const defaultValues = {
 	question: " How confident are you in achieving our sprint goals?",
 	timeout: 10,
 	first_button_text: "On track",
-	first_button_emoji: ":white_check_mark:",
+	first_button_emoji: "white_check_mark",
 	second_button_text: "Uncertain",
-	second_button_emoji: ":warning:",
+	second_button_emoji: "warning",
 	third_button_text: "At Risk",
-	third_button_emoji: ":fire:",
+	third_button_emoji: "fire",
 };
 // Initialize the database
 initDb();
@@ -62,7 +62,7 @@ app.event("app_home_opened", async ({ body, client }) => {
 		const generatedHomeView = await generateHomeView(body?.team_id);
 
 		await client.views.publish({
-			user_id: event.user,
+			user_id: body.event.user,
 			view: generatedHomeView,
 		});
 	} catch (error) {
@@ -130,13 +130,13 @@ app.action(/^tl_update_preview_[123]$/, async ({ ack, body, client }) => {
 	const third_button_emoji = tl_button_3_emoji.tl_buttons_emoji_3.value;
 	const newBlocks = body.view.blocks.map((block) => {
 		if (block.block_id === "tl_preview_block_1") {
-			block.text.text = `Button preview:    *${first_button_text}* ${first_button_emoji}`;
+			block.text.text = `Button preview:    *${first_button_text}* :${first_button_emoji}:`;
 		}
 		if (block.block_id === "tl_preview_block_2") {
-			block.text.text = `Button preview:    *${second_button_text}* ${second_button_emoji}`;
+			block.text.text = `Button preview:    *${second_button_text}* :${second_button_emoji}:`;
 		}
 		if (block.block_id === "tl_preview_block_3") {
-			block.text.text = `Button preview:    *${third_button_text}* ${third_button_emoji}`;
+			block.text.text = `Button preview:    *${third_button_text}* :${third_button_emoji}:`;
 		}
 		return block;
 	});
@@ -169,6 +169,7 @@ app.action(
 			replace_original: true,
 			blocks: trafficLightProcess({
 				revealFlag: false,
+				startSession: false,
 				participant,
 				...getChannelSettings,
 			}),

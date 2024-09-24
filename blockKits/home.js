@@ -130,7 +130,7 @@ const generateHomeView = async (team_id) => {
 				},
 				label: {
 					type: "plain_text",
-					text: "First button emoji (use :emoji: format)",
+					text: "First button emoji name",
 					emoji: true,
 				},
 				block_id: "tl_button_1_emoji",
@@ -139,7 +139,7 @@ const generateHomeView = async (team_id) => {
 				type: "section",
 				block_id: "tl_preview_block_1",
 				text: {
-					text: `Button preview:    *${first_button_text}* ${first_button_emoji}`,
+					text: `Button preview:    *${first_button_text}* :${first_button_emoji}:`,
 					type: "mrkdwn",
 				},
 				accessory: {
@@ -176,7 +176,7 @@ const generateHomeView = async (team_id) => {
 				},
 				label: {
 					type: "plain_text",
-					text: "Second button emoji (use :emoji: format)",
+					text: "Second button emoji name",
 					emoji: true,
 				},
 				block_id: "tl_button_2_emoji",
@@ -185,7 +185,7 @@ const generateHomeView = async (team_id) => {
 				type: "section",
 				block_id: "tl_preview_block_2",
 				text: {
-					text: `Button preview:    *${second_button_text}* ${second_button_emoji}`,
+					text: `Button preview:    *${second_button_text}* :${second_button_emoji}:`,
 					type: "mrkdwn",
 				},
 				accessory: {
@@ -222,7 +222,7 @@ const generateHomeView = async (team_id) => {
 				},
 				label: {
 					type: "plain_text",
-					text: "Third button emoji (use :emoji: format)",
+					text: "Third button emoji name",
 					emoji: true,
 				},
 				block_id: "tl_button_3_emoji",
@@ -231,7 +231,7 @@ const generateHomeView = async (team_id) => {
 				type: "section",
 				block_id: "tl_preview_block_3",
 				text: {
-					text: `Button preview:    *${third_button_text}* ${third_button_emoji}`,
+					text: `Button preview:    *${third_button_text}* :${third_button_emoji}:`,
 					type: "mrkdwn",
 				},
 				accessory: {
